@@ -7,11 +7,17 @@
 
 import SwiftUI
 import SwiftData
+import UIKit
 
 @main
 struct Router_Chat_AIApp: App {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @AppStorage("isDarkMode") private var isDarkMode = false
+
+    init() {
+        // Apply global performance optimizations
+        configureAppPerformance()
+    }
 
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
@@ -39,5 +45,21 @@ struct Router_Chat_AIApp: App {
             }
         }
         .modelContainer(sharedModelContainer)
+    }
+
+    // MARK: - Private Methods
+
+    /// Configure global app performance settings
+    private func configureAppPerformance() {
+        // Optimize keyboard performance globally
+        DispatchQueue.main.async {
+            UIApplication.optimizeKeyboardPerformance()
+
+            // Configure haptic feedback to be less resource-intensive
+            HapticFeedbackManager.shared.setEnabled(true)
+
+            // Ensure animations are enabled by default
+            UIView.setAnimationsEnabled(true)
+        }
     }
 }

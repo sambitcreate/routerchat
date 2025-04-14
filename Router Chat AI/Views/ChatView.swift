@@ -12,11 +12,16 @@ struct ChatView: View {
     @State private var showDocumentPicker = false
     @State private var showModelSelector = false
     @State private var showAttachmentMenu = false
+    @FocusState private var isInputFocused: Bool
+
+    // Track whether this view was opened from ChatHistoryView
+    private var isFromChatHistory: Bool
 
     // Initialize with an optional chat session
-    init(chatSession: ChatSession? = nil) {
+    init(chatSession: ChatSession? = nil, isFromChatHistory: Bool = true) {
         // Use _viewModel to initialize the StateObject
         _viewModel = StateObject(wrappedValue: ChatViewModel(chatSession: chatSession))
+        self.isFromChatHistory = isFromChatHistory
     }
 
     var body: some View {
@@ -83,7 +88,7 @@ struct ChatView: View {
                     Divider()
                         .background(theme.divider)
 
-                    HStack(alignment: .bottom, spacing: 12) {
+                    HStack(alignment: .center, spacing: 12) {
                         // Attachment button
                         Button(action: {
                             showAttachmentMenu = true
@@ -91,6 +96,8 @@ struct ChatView: View {
                             Image(systemName: "plus.circle.fill")
                                 .font(.system(size: 24))
                                 .foregroundStyle(theme.accentColor)
+                                .frame(width: 40, height: 40)
+                                .contentShape(Rectangle())
                         }
                         .confirmationDialog("Add Attachment", isPresented: $showAttachmentMenu) {
                             Button("Photo") {
@@ -102,13 +109,13 @@ struct ChatView: View {
                             Button("Cancel", role: .cancel) {}
                         }
 
-                        // Text input field
-                        TextField("Ask Away... (text input)", text: $messageText)
+                        // Text input field - optimized for better keyboard performance
+                        TextField("Ask Away...", text: $messageText)
                             .textFieldStyle(.plain)
-                            .padding(.vertical, 8)
-                            .padding(.horizontal, 12)
-                            .background(theme.secondaryBackground)
-                            .clipShape(RoundedRectangle(cornerRadius: 20))
+                            .foregroundStyle(theme.primaryText)
+                            .focused($isInputFocused)
+                            .submitLabel(.send)
+                            .autocorrectionDisabled()
                             .onSubmit {
                                 if !messageText.isEmpty {
                                     viewModel.inputMessage = messageText
@@ -118,6 +125,16 @@ struct ChatView: View {
                                     }
                                 }
                             }
+                            // Use a higher priority transaction to ensure keyboard responsiveness
+                            .transaction { transaction in
+                                transaction.animation = nil
+                                transaction.disablesAnimations = true
+                            }
+                        .padding(.vertical, 12)
+                        .padding(.horizontal, 16)
+                        .frame(height: 40)
+                        .background(theme.secondaryBackground)
+                        .clipShape(RoundedRectangle(cornerRadius: 20))
 
                         // Microphone button
                         Button(action: {
@@ -126,6 +143,8 @@ struct ChatView: View {
                             Image(systemName: "mic.circle.fill")
                                 .font(.system(size: 24))
                                 .foregroundStyle(theme.accentColor)
+                                .frame(width: 40, height: 40)
+                                .contentShape(Rectangle())
                         }
 
                         // Send button
@@ -141,6 +160,8 @@ struct ChatView: View {
                             Image(systemName: "arrow.up.circle.fill")
                                 .font(.system(size: 24))
                                 .foregroundStyle(theme.accentColor)
+                                .frame(width: 40, height: 40)
+                                .contentShape(Rectangle())
                         }
                         .disabled(messageText.isEmpty || viewModel.isLoading)
                     }
@@ -150,6 +171,12 @@ struct ChatView: View {
                 .background(theme.cardBackground.opacity(0.8))
             }
         }
+        // Use a simpler approach for keyboard dismissal
+        .contentShape(Rectangle())
+        .onTapGesture(perform: {
+            // Dismiss keyboard when tapping outside text field
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        })
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .principal) {
@@ -168,16 +195,19 @@ struct ChatView: View {
                     }
             }
 
-            ToolbarItem(placement: .topBarLeading) {
-                Button {
-                    // Use dismiss() to navigate back with the standard iOS animation
-                    dismiss()
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "chevron.left")
-                        Text("History")
+            // Only show back button if we came from ChatHistoryView
+            if isFromChatHistory {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        // Use dismiss() to navigate back with the standard iOS animation
+                        dismiss()
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "chevron.left")
+                            Text("History")
+                        }
+                        .foregroundStyle(theme.accentColor)
                     }
-                    .foregroundStyle(theme.accentColor)
                 }
             }
 
@@ -222,6 +252,10 @@ struct ChatView: View {
         .onAppear {
             // Set the model context when the view appears
             viewModel.setModelContext(modelContext)
+
+            // Optimize keyboard performance
+            UIImpactFeedbackGenerator.disableHapticsDuringKeyboardOperations()
+            UIApplication.optimizeKeyboardPerformance()
         }
     }
 }

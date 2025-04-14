@@ -190,13 +190,8 @@ class ChatViewModel: ObservableObject {
     }
 
     private func provideFeedback(type: FeedbackType) {
-        // Wrap in a try-catch to prevent haptic feedback issues from affecting the app
-        do {
-            HapticFeedbackManager.shared.playFeedback(for: type)
-        } catch {
-            print("Failed to provide haptic feedback: \(error.localizedDescription)")
-            // Silently fail - haptic feedback is non-critical
-        }
+        // No need for try-catch as playFeedback doesn't throw
+        HapticFeedbackManager.shared.playFeedback(for: type)
     }
 
     private func getCurrentClient() -> AIClient? {
@@ -265,9 +260,9 @@ class ChatViewModel: ObservableObject {
     }
 
     func handleSelectedPhoto() {
-        guard let selectedPhoto = selectedPhoto else { return }
-        guard let modelContext = modelContext else {
-            print("Model context not set")
+        // Check if we have a selected photo and model context
+        guard selectedPhoto != nil, let modelContext = modelContext else {
+            print("Model context not set or no photo selected")
             return
         }
 

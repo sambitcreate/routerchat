@@ -36,7 +36,7 @@ struct ChatHistoryView: View {
                 } else {
                     List {
                         ForEach(viewModel.chatHistory) { chat in
-                            NavigationLink(destination: ChatView(chatSession: chat)) {
+                            NavigationLink(destination: ChatView(chatSession: chat, isFromChatHistory: true)) {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(chat.title)
                                         .font(.system(.body, design: .rounded))
@@ -77,7 +77,7 @@ struct ChatHistoryView: View {
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    NavigationLink(destination: ChatView(chatSession: nil)) {
+                    NavigationLink(destination: ChatView(chatSession: nil, isFromChatHistory: true)) {
                         Image(systemName: "plus")
                             .foregroundStyle(theme.accentColor)
                     }

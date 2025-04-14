@@ -3,13 +3,13 @@ import SwiftUI
 struct MainTabView: View {
     @Environment(\.colorTheme) private var theme
     @State private var selectedTab: Tab = .chatHistory
-    
+
     enum Tab {
         case chatHistory
         case chat
         case settings
     }
-    
+
     var body: some View {
         TabView(selection: $selectedTab) {
             // Chat History Tab
@@ -20,16 +20,16 @@ struct MainTabView: View {
                 Label("History", systemImage: "clock.arrow.circlepath")
             }
             .tag(Tab.chatHistory)
-            
+
             // Chat Tab
             NavigationStack {
-                ChatView()
+                ChatView(isFromChatHistory: false)
             }
             .tabItem {
                 Label("Chat", systemImage: "bubble.left.and.bubble.right")
             }
             .tag(Tab.chat)
-            
+
             // Settings Tab
             NavigationStack {
                 SettingsView()
