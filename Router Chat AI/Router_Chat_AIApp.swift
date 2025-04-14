@@ -10,9 +10,12 @@ import SwiftData
 
 @main
 struct Router_Chat_AIApp: App {
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    @AppStorage("isDarkMode") private var isDarkMode = false
+
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
+            Message.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
@@ -25,7 +28,15 @@ struct Router_Chat_AIApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            if !hasCompletedOnboarding {
+                OnboardingView()
+                    .colorTheme(isDarkMode ? .dark : .light)
+                    .preferredColorScheme(isDarkMode ? .dark : .light)
+            } else {
+                ContentView(modelContext: sharedModelContainer.mainContext)
+                    .colorTheme(isDarkMode ? .dark : .light)
+                    .preferredColorScheme(isDarkMode ? .dark : .light)
+            }
         }
         .modelContainer(sharedModelContainer)
     }
