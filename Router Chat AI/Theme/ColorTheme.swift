@@ -36,47 +36,47 @@ struct ColorTheme {
         // Content Colors
         primaryText: .black,
         secondaryText: Color.black.opacity(0.7),
-        accentColor: Color(red: 0.35, green: 0.7, blue: 1.0),
+        accentColor: Color(red: 0.4, green: 0.6, blue: 0.9),
 
         // UI Element Colors
-        cardBackground: Color.white.opacity(0.7),
-        inputBackground: Color.white.opacity(0.7),
+        cardBackground: Color.white.opacity(0.8),
+        inputBackground: Color.white.opacity(0.8),
         divider: Color.black.opacity(0.1),
-        userMessageBackground: Color(red: 0.35, green: 0.7, blue: 1.0),
+        userMessageBackground: Color(red: 0.4, green: 0.6, blue: 0.9),
         assistantMessageBackground: Color(white: 0.95),
-        navigationBarBackground: Color.white.opacity(0.8),
+        navigationBarBackground: Color.white.opacity(0.9),
 
         // Gradient Colors
-        backgroundGradientStart: .white,
+        backgroundGradientStart: Color(red: 0.98, green: 0.98, blue: 1.0),
         backgroundGradientEnd: Color(red: 0.95, green: 0.97, blue: 1.0),
-        overlayGradientStart: Color(red: 0.35, green: 0.7, blue: 1.0).opacity(0.05),
-        overlayGradientEnd: Color(red: 0.35, green: 0.7, blue: 1.0).opacity(0.02)
+        overlayGradientStart: Color(red: 0.4, green: 0.6, blue: 0.9).opacity(0.05),
+        overlayGradientEnd: Color(red: 0.4, green: 0.6, blue: 0.9).opacity(0.02)
     )
 
     static let dark = ColorTheme(
         // Background Colors
-        background: Color(red: 0.05, green: 0.05, blue: 0.05),
+        background: Color(red: 0.05, green: 0.05, blue: 0.1),
         secondaryBackground: Color(white: 0.15),
         tertiaryBackground: Color(white: 0.12),
 
         // Content Colors
         primaryText: .white,
         secondaryText: Color.white.opacity(0.7),
-        accentColor: Color.blue.opacity(0.9),
+        accentColor: Color(red: 0.4, green: 0.6, blue: 0.9),
 
         // UI Element Colors
-        cardBackground: Color(white: 0.15),
-        inputBackground: Color(white: 0.15),
+        cardBackground: Color(white: 0.15).opacity(0.8),
+        inputBackground: Color(white: 0.15).opacity(0.8),
         divider: Color.white.opacity(0.1),
-        userMessageBackground: Color.blue.opacity(0.8),
+        userMessageBackground: Color(red: 0.4, green: 0.6, blue: 0.9),
         assistantMessageBackground: Color(white: 0.2),
-        navigationBarBackground: Color(red: 0.05, green: 0.05, blue: 0.05).opacity(0.8),
+        navigationBarBackground: Color(red: 0.05, green: 0.05, blue: 0.1).opacity(0.9),
 
         // Gradient Colors
-        backgroundGradientStart: Color(red: 0.05, green: 0.05, blue: 0.05),
-        backgroundGradientEnd: Color(red: 0.1, green: 0.1, blue: 0.15),
-        overlayGradientStart: Color.blue.opacity(0.03),
-        overlayGradientEnd: Color.blue.opacity(0.01)
+        backgroundGradientStart: Color(red: 0.05, green: 0.05, blue: 0.1),
+        backgroundGradientEnd: Color(red: 0.1, green: 0.1, blue: 0.2),
+        overlayGradientStart: Color(red: 0.4, green: 0.6, blue: 0.9).opacity(0.05),
+        overlayGradientEnd: Color(red: 0.4, green: 0.6, blue: 0.9).opacity(0.02)
     )
 }
 

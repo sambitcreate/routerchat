@@ -6,6 +6,7 @@ struct SettingsView: View {
     @AppStorage("isDarkMode") private var isDarkMode = false
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = true
     @StateObject private var viewModel = SettingsViewModel()
+    @State private var navigateToHome = false
 
     var body: some View {
         NavigationStack {
@@ -16,6 +17,9 @@ struct SettingsView: View {
 
                     // Appearance Section
                     AppearanceSection(isDarkMode: $isDarkMode, hasCompletedOnboarding: $hasCompletedOnboarding, dismiss: dismiss)
+
+                    // Navigation Section
+                    NavigationSection(navigateToHome: $navigateToHome, dismiss: dismiss)
 
                     // Made in NYC Section
                     MadeInNYCSection()
@@ -38,6 +42,11 @@ struct SettingsView: View {
                 }
             }
         }
+        .background(
+            NavigationLink(destination: ChatHistoryView(), isActive: $navigateToHome) {
+                EmptyView()
+            }
+        )
     }
 }
 
@@ -95,6 +104,40 @@ struct AppearanceSection: View {
                 Button("Restart Onboarding") {
                     hasCompletedOnboarding = false
                     dismiss()
+                }
+                .foregroundStyle(theme.primaryText)
+                .font(.system(.body, design: .rounded))
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+            }
+            .background(theme.secondaryBackground)
+            .clipShape(RoundedRectangle(cornerRadius: containerCornerRadius, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: containerCornerRadius, style: .continuous)
+                    .stroke(theme.divider, lineWidth: 1)
+            }
+        }
+    }
+}
+
+// Extracted Navigation Section
+struct NavigationSection: View {
+    @Binding var navigateToHome: Bool
+    var dismiss: DismissAction
+    @Environment(\.colorTheme) private var theme
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Navigation")
+                .font(.system(.headline, design: .rounded))
+                .foregroundStyle(theme.primaryText)
+
+            let containerCornerRadius: CGFloat = 16
+
+            VStack(spacing: 2) {
+                Button("Go to Chat History") {
+                    dismiss()
+                    navigateToHome = true
                 }
                 .foregroundStyle(theme.primaryText)
                 .font(.system(.body, design: .rounded))

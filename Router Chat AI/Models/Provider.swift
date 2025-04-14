@@ -10,7 +10,7 @@ enum Provider: String, Codable, CaseIterable, Identifiable {
     var models: [String] {
         switch self {
         case .openAI:
-            return ["gpt-4", "gpt-3.5-turbo", "openai/o3-mini", "openai/gpt-4o", "openai/gpt-4o-search-preview", "openai/gpt-4o-mini-search-preview"]
+            return ["gpt-4", "gpt-3.5-turbo", "openai/o3-mini", "openai/gpt-4o", "openai/gpt-4o-search-preview", "openai/gpt-4o-mini-search-preview", "openai/gpt-4o-mini"]
         case .anthropic:
             return ["claude-2", "claude-instant", "anthropic/claude-3.7-sonnet", "anthropic/claude-3.7-sonnet:thinking", "anthropic/claude-3.5-sonnet"]
         case .openRouter:
@@ -25,6 +25,8 @@ enum Provider: String, Codable, CaseIterable, Identifiable {
                 "anthropic/claude-2",
                 "anthropic/claude-3.7-sonnet:beta",
                 "anthropic/claude-3.5-sonnet",
+                "anthropic/claude-3.7-sonnet",
+                "anthropic/claude-3.7-sonnet:thinking",
                 "google/gemini-pro",
                 "google/gemini-2.0-flash-lite-001",
                 "google/gemini-2.0-flash-001",

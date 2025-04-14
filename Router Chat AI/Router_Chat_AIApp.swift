@@ -33,7 +33,7 @@ struct Router_Chat_AIApp: App {
                     .colorTheme(isDarkMode ? .dark : .light)
                     .preferredColorScheme(isDarkMode ? .dark : .light)
             } else {
-                ContentView(modelContext: sharedModelContainer.mainContext)
+                MainTabView()
                     .colorTheme(isDarkMode ? .dark : .light)
                     .preferredColorScheme(isDarkMode ? .dark : .light)
             }
