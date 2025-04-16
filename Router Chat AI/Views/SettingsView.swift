@@ -7,36 +7,26 @@ struct SettingsView: View {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = true
     @StateObject private var viewModel = SettingsViewModel()
 
-
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 24) {
-                    // API Keys Section
-                    APIKeysSection(viewModel: viewModel)
+        ScrollView {
+            VStack(spacing: 24) {
+                // API Keys Section
+                APIKeysSection(viewModel: viewModel)
 
-                    // Appearance Section
-                    AppearanceSection(isDarkMode: $isDarkMode, hasCompletedOnboarding: $hasCompletedOnboarding, dismiss: dismiss)
+                // Appearance Section
+                AppearanceSection(isDarkMode: $isDarkMode, hasCompletedOnboarding: $hasCompletedOnboarding, dismiss: dismiss)
 
-                    // Made in NYC Section
-                    MadeInNYCSection()
-                }
-                .padding(20)
+                // Made in NYC Section
+                MadeInNYCSection()
             }
-            .background(theme.background)
-            .navigationTitle("Settings")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") {
-                        Task {
-                            await viewModel.saveKeys()
-                            dismiss()
-                        }
-                    }
-                    .foregroundStyle(theme.accentColor)
-                    .font(.system(.body, design: .rounded))
-                }
+            .padding(20)
+        }
+        .background(theme.background)
+        .navigationTitle("Settings")
+        .navigationBarTitleDisplayMode(.large)
+        .onDisappear {
+            Task {
+                await viewModel.saveKeys()
             }
         }
     }
@@ -112,41 +102,7 @@ struct AppearanceSection: View {
     }
 }
 
-// Extracted Navigation Section
-struct NavigationSection: View {
-    @Binding var navigateToHome: Bool
-    var dismiss: DismissAction
-    @Environment(\.colorTheme) private var theme
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Navigation")
-                .font(.system(.headline, design: .rounded))
-                .foregroundStyle(theme.primaryText)
-
-            let containerCornerRadius: CGFloat = 16
-
-            VStack(spacing: 2) {
-                Button("Go to Chat History") {
-                    dismiss()
-                    navigateToHome = true
-                }
-                .foregroundStyle(theme.primaryText)
-                .font(.system(.body, design: .rounded))
-                .padding(.horizontal, 20)
-                .padding(.vertical, 12)
-            }
-            .background(theme.secondaryBackground)
-            .clipShape(RoundedRectangle(cornerRadius: containerCornerRadius, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: containerCornerRadius, style: .continuous)
-                    .stroke(theme.divider, lineWidth: 1)
-            }
-        }
-    }
-}
-
-// Extracted Made in NYC Section
+// Made in NYC Section
 struct MadeInNYCSection: View {
     @Environment(\.colorTheme) private var theme
 
@@ -208,72 +164,5 @@ struct APIKeySettingRow: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 12)
-    }
-}
-
-class SettingsViewModel: ObservableObject {
-    @Published var openAIKey = ""
-    @Published var anthropicKey = ""
-    @Published var openRouterKey = ""
-
-    init() {
-        loadKeys()
-    }
-
-    private func loadKeys() {
-        for provider in Provider.allCases {
-            if let key = try? SecureStorage.shared.getAPIKey(for: provider.keychainKey) {
-                switch provider {
-                case .openAI:
-                    openAIKey = key
-                case .anthropic:
-                    anthropicKey = key
-                case .openRouter:
-                    openRouterKey = key
-                }
-            }
-        }
-    }
-
-    func bindingForProvider(_ provider: Provider) -> Binding<String> {
-        switch provider {
-        case .openAI:
-            return Binding(
-                get: { self.openAIKey },
-                set: { self.openAIKey = $0 }
-            )
-        case .anthropic:
-            return Binding(
-                get: { self.anthropicKey },
-                set: { self.anthropicKey = $0 }
-            )
-        case .openRouter:
-            return Binding(
-                get: { self.openRouterKey },
-                set: { self.openRouterKey = $0 }
-            )
-        }
-    }
-
-    func saveKeys() async {
-        do {
-            for provider in Provider.allCases {
-                let key: String
-                switch provider {
-                case .openAI:
-                    key = openAIKey
-                case .anthropic:
-                    key = anthropicKey
-                case .openRouter:
-                    key = openRouterKey
-                }
-
-                if !key.isEmpty {
-                    try SecureStorage.shared.saveAPIKey(key, for: provider.keychainKey)
-                }
-            }
-        } catch {
-            print("Error saving keys: \(error)")
-        }
     }
 }

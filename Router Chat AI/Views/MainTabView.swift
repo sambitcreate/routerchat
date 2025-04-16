@@ -1,8 +1,10 @@
 import SwiftUI
+import SwiftData
 
 struct MainTabView: View {
     @Environment(\.colorTheme) private var theme
     @State private var selectedTab: Tab = .chatHistory
+    @StateObject private var chatViewModel = ChatViewModel()
 
     enum Tab {
         case chatHistory
@@ -23,7 +25,7 @@ struct MainTabView: View {
 
             // Chat Tab
             NavigationStack {
-                ChatView(isFromChatHistory: false)
+                ChatView(viewModel: chatViewModel, isFromChatHistory: false)
             }
             .tabItem {
                 Label("Chat", systemImage: "bubble.left.and.bubble.right")
@@ -45,5 +47,6 @@ struct MainTabView: View {
 
 #Preview {
     MainTabView()
+        .modelContainer(for: [Message.self])
         .colorTheme(.light)
 }

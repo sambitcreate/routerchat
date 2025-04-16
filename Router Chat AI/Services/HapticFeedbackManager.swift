@@ -219,6 +219,11 @@ class HapticFeedbackManager {
                 let generator = UIImpactFeedbackGenerator(style: style)
                 generator.prepare()
                 generator.impactOccurred()
+            @unknown default:
+                // Handle any future feedback styles
+                let generator = UIImpactFeedbackGenerator(style: style)
+                generator.prepare()
+                generator.impactOccurred()
             }
         }
     }

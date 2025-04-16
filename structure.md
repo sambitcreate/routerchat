@@ -2,108 +2,109 @@
 
 ## Overview
 
-Router Chat AI is a SwiftUI-based iOS application that provides a unified interface for interacting with various AI models from different providers (OpenAI, Anthropic, and OpenRouter). The app allows users to manage API keys, select models, and have conversations with AI models.
+Router Chat AI is a SwiftUI-based iOS application that provides a unified interface for interacting with various AI models from different providers (OpenAI, Anthropic, and OpenRouter). The app allows users to manage API keys, select models, and have conversations with AI models while maintaining chat history.
 
 ## App Architecture
 
 The app follows a modern SwiftUI architecture with:
 
-- **SwiftData** for persistence
-- **MVVM pattern** (Model-View-ViewModel)
-- **Environment-based theming** for dark/light mode support
-- **Protocol-oriented networking** for API interactions
+- **SwiftData** for persistence of messages and chat history
+- **MVVM pattern** (Model-View-ViewModel) for separation of concerns
+- **Environment-based theming** for consistent dark/light mode support
+- **Protocol-oriented networking** for flexible API interactions
 - **Secure storage** for API keys using Keychain
 
 ## Entry Points and Navigation
 
-- **Router_Chat_AIApp.swift**: Main app entry point that sets up the SwiftData container and determines whether to show onboarding or the main app
-- **MainView.swift**: Main view with custom top navigation bar and content switching
+- **Router_Chat_AIApp.swift**: Main app entry point that sets up the SwiftData container and determines whether to show onboarding or the main app based on whether the user has completed onboarding. Also configures global performance optimizations.
+- **ContentView.swift**: Simple wrapper around MainView that provides the model context and theme environment.
+- **MainView.swift**: Main view with custom top navigation bar and content switching between chat, chat history, and settings views.
 
 ## Key Files and Their Functionality
 
 ### Models
 
-- **Provider.swift**: Enum defining the supported AI providers (OpenAI, Anthropic, OpenRouter) with their available models and keychain keys. Models with provider prefixes (e.g., "meta-llama/llama-4-scout:free") are automatically routed through OpenRouter.
-- **Message.swift**: SwiftData model for chat messages with properties for content, role, timestamp, provider, and model
+- **Provider.swift**: Enum defining the supported AI providers (OpenAI, Anthropic, OpenRouter) with their available models and keychain keys. Contains logic for routing models with provider prefixes (e.g., "meta-llama/llama-4-scout:free") through OpenRouter.
+- **Message.swift**: SwiftData model for chat messages with properties for content, role, timestamp, provider, and model. Uses a computed property for the Provider enum since enums aren't directly persistable in SwiftData.
+- **MessageRole.swift**: Enum defining message roles (user, assistant) for chat interactions.
 
 ### Views
 
-#### Main Navigation
+#### Main Navigation and Structure
 - **MainView.swift**: Main view with custom top navigation bar that includes:
-  - History button (clock icon)
-  - New chat button (plus icon)
-  - Current model name display
-  - Settings button (gear icon)
-- **ContentView.swift**: Simple wrapper around MainView
+  - History button (clock icon) for accessing chat history
+  - New chat button (plus icon) for starting a new conversation
+  - Current model name display for showing and selecting models
+  - Settings button (gear icon) for accessing app settings
+- **TopNavigationBar.swift**: Custom navigation bar component used in MainView
 
-#### Onboarding
-- **OnboardingView.swift**: Initial onboarding experience with information pages and API key setup
-- **APIKeyFormView.swift**: Form for entering API keys during onboarding
+#### Chat Functionality
+- **ChatView.swift**: Primary chat interface where users interact with AI models. Features include:
+  - Message list with user and AI messages
+  - Text input area with attachment options
+  - Streaming text display for AI responses
+  - Support for photos and document attachments
+  - Keyboard dismissal on outside tap/swipe
+- **ChatHistoryView.swift**: Displays saved chat sessions with titles, previews, and timestamps. Allows users to select a chat to continue or delete chats with swipe actions.
+- **ModelSelectorView.swift**: Interface for selecting AI providers and models, organized by provider with a searchable list.
 
-#### Chat
-- **ChatView.swift**: Main chat interface for interacting with AI models
-  - Displays messages
-  - Allows sending new messages
-  - Supports attachments (photos, documents)
-  - Includes model selection
-  - Has a back button to navigate to history (when navigated from ChatHistoryView)
-  - Includes a "+" button to start new chats
-  - Dismisses keyboard when tapping outside or swiping down
-- **ChatMessageView.swift**: Individual message bubble UI component
+#### Settings and Onboarding
+- **SettingsView.swift**: Settings interface with sections for:
+  - API key management for each provider
+  - Appearance settings (dark/light mode)
+  - Navigation options
+  - App information
+- **OnboardingView.swift**: First-time user experience with introduction to app features and API key setup.
+- **OnboardingPageView.swift**: Individual pages within the onboarding flow.
+- **APIKeyFormView.swift**: Form for entering and managing API keys during onboarding or from settings.
 
-#### Chat History
-- **ChatHistoryView.swift**: Displays a list of past conversations
-  - Shows chat titles and previews
-  - Allows navigation to specific chats
-  - Supports deleting chats
-  - Has a "+" button to start new chats
-
-#### Settings
-- **SettingsView.swift**: Settings interface with:
-  - API key management
-  - Dark/light mode toggle
-  - Onboarding reset option
+#### UI Components
+- **MessageBubble.swift**: Custom chat bubble component for displaying messages.
+- **LoadingIndicator.swift**: Animated loading indicator for async operations.
+- **AttachmentView.swift**: Component for displaying attached photos or documents.
 
 ### ViewModels
 
-- **ChatViewModel.swift**: Manages chat state and interactions
-  - Handles message sending/receiving
-  - Manages provider/model selection
-  - Intelligently routes requests to the appropriate provider based on model format
-  - Remembers manually selected models between chat sessions
-  - Handles attachments
-  - Saves chats to history
-- **ChatHistoryViewModel.swift**: Manages chat history
-  - Loads saved chats
-  - Handles adding new chats
-  - Manages chat deletion
-  - Shared instance used throughout the app
-- **SettingsViewModel.swift**: Manages settings
-  - Loads/saves API keys
-  - Provides bindings for settings UI
+- **ChatViewModel.swift**: Manages chat state and interactions with AI services, including:
+  - Message list management
+  - API client initialization and selection
+  - Message sending and receiving
+  - Streaming text handling
+  - Attachment processing
+- **ChatHistoryViewModel.swift**: Handles chat history operations:
+  - Loading saved chats
+  - Saving new chats
+  - Deleting chats
+  - Chat session data conversion
+- **SettingsViewModel.swift**: Manages settings state and operations:
+  - API key loading and saving
+  - Theme preference management
 
 ### Services
 
-- **AIClient.swift**: Protocol defining the interface for AI service providers
-- **OpenAIClient.swift**: Implementation for OpenAI API
-- **AnthropicClient.swift**: Implementation for Anthropic API
-- **OpenRouterClient.swift**: Implementation for OpenRouter API
-- **SecureStorage.swift**: Keychain wrapper for secure API key storage
-- **HapticFeedbackManager.swift**: Manages haptic feedback with performance optimizations
+- **AIClient.swift**: Protocol defining the interface for AI service providers with methods for sending messages and streaming responses.
+- **OpenAIClient.swift**: Implementation for OpenAI API with support for both regular and streaming requests.
+- **AnthropicClient.swift**: Implementation for Anthropic API with Claude model support.
+- **OpenRouterClient.swift**: Implementation for OpenRouter API, which provides access to multiple AI models from different providers.
+- **SecureStorage.swift**: Keychain wrapper for secure API key storage with methods for saving, retrieving, and deleting keys.
+- **HapticFeedbackManager.swift**: Manages haptic feedback with performance optimizations to reduce battery impact.
 
 ### Theme System
 
-- **ColorTheme.swift**: Defines color themes for the app
+- **ColorTheme.swift**: Defines color themes for the app with:
   - Light and dark mode color sets
   - Environment-based theme injection
   - Custom view modifier for applying themes
+  - Gradient colors for backgrounds and overlays
 
-### Extensions
+### Extensions and Utilities
 
-- **UIKit+Extensions.swift**: Extensions for UIKit classes to improve performance
+- **UIKit+Extensions.swift**: Extensions for UIKit classes to improve performance:
   - Keyboard optimization utilities
   - Haptic feedback management
   - Keyboard dismissal helpers
+- **Date+Extensions.swift**: Date formatting utilities for chat timestamps.
+- **String+Extensions.swift**: String manipulation helpers for message processing.
 
 ## Navigation Flow
 
@@ -125,28 +126,9 @@ The app follows a modern SwiftUI architecture with:
 4. **ChatView**:
    - Back button: ChatView → ChatHistoryView
    - "+" button: Starts a new chat (clears current chat)
-
-5. **SettingsView**:
-   - "Restart Onboarding" button: SettingsView → OnboardingView
-
-## Data Flow
-
-1. **API Keys**:
-   - Entered during onboarding or in settings
-   - Stored securely in Keychain via SecureStorage
-   - Retrieved when initializing AI clients
-
-2. **Messages**:
-   - Created in ChatViewModel
-   - Stored in SwiftData via ModelContext
-   - Displayed in ChatView
-
-3. **Chat History**:
-   - Created when starting a new chat with existing messages
-   - Automatically saved when clicking the + button to start a new chat
-   - Directly added to the shared ChatHistoryViewModel instance
-   - Managed by a single shared ChatHistoryViewModel instance
-   - Displayed in ChatHistoryView
+   - Attachment button: Opens menu for photos or documents
+   - Mic button: Voice input (if implemented)
+   - Send button: Sends message to selected AI model
 
 ## Theme System
 
@@ -165,11 +147,21 @@ The app uses a custom theme system with:
 5. **Attachment support**: Photos and documents
 6. **Dark/light mode**: Customizable appearance
 7. **Onboarding**: Guided setup experience
+8. **Streaming responses**: Real-time AI responses with token-by-token display
 
-## UI Components
+## Data Flow
 
-1. **Chat interface**: Message bubbles, input field, attachment options
-2. **History list**: Chat previews with titles and timestamps
-3. **Settings panels**: API key fields, appearance toggles
-4. **Onboarding carousel**: Information pages and setup form
-5. **Tab bar**: Navigation between main app sections
+1. **User Input**: User enters text or attaches media in ChatView
+2. **ViewModel Processing**: ChatViewModel processes input and prepares API request
+3. **API Request**: Appropriate AIClient implementation sends request to selected provider
+4. **Response Handling**: Response is processed and added to message list
+5. **Persistence**: Messages are saved to SwiftData store
+6. **UI Update**: ChatView updates to display new messages
+
+## Performance Optimizations
+
+- Background thread processing for JSON serialization/deserialization
+- Optimized keyboard handling
+- Efficient haptic feedback management
+- Lazy loading of chat history
+- Streaming text display for faster perceived response time

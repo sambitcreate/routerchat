@@ -331,16 +331,21 @@ class ChatViewModel: ObservableObject {
     func startNewChat() {
         // Save current chat to history if there are messages
         if !messages.isEmpty {
+            print("startNewChat: Saving current chat with \(messages.count) messages to history")
             saveCurrentChatToHistory()
+        } else {
+            print("startNewChat: No messages to save to history")
         }
 
         // Clear current messages
         clearMessages() // This will also reset chatSessionId
+        print("startNewChat: Cleared messages and reset chatSessionId")
 
         // Reset provider and model to defaults if needed
         if !modelManuallySelected {
             selectedProvider = .openAI
             selectedModel = "gpt-4"
+            print("startNewChat: Reset provider and model to defaults")
         }
 
         // Provide haptic feedback
@@ -349,7 +354,10 @@ class ChatViewModel: ObservableObject {
 
     func saveCurrentChatToHistory() {
         // Only save if we have messages
-        guard !messages.isEmpty else { return }
+        guard !messages.isEmpty else {
+            print("saveCurrentChatToHistory: No messages to save")
+            return
+        }
 
         // Get the first few messages to create a title and preview
         let chatTitle = messages.first?.content.prefix(30).appending(messages.count > 1 ? "..." : "") ?? "New Chat"
@@ -363,13 +371,15 @@ class ChatViewModel: ObservableObject {
             messages: messages
         )
 
+        print("saveCurrentChatToHistory: Created chat session with ID \(chatSession.id) and \(chatSession.messages.count) messages")
+
         // Save to persistent storage (this would be implemented in ChatHistoryViewModel)
         NotificationCenter.default.post(
             name: Notification.Name("SaveChatToHistory"),
             object: chatSession
         )
 
-        print("Saved chat to history: \(chatTitle)")
+        print("saveCurrentChatToHistory: Posted notification to save chat to history: \(chatTitle)")
     }
 
     func handleSelectedPhoto() {

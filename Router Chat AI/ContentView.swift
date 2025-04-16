@@ -13,7 +13,7 @@ struct ContentView: View {
     @Environment(\.colorTheme) private var theme
 
     var body: some View {
-        MainTabView()
+        MainView()
     }
 }
 

@@ -39,7 +39,7 @@ struct Router_Chat_AIApp: App {
                     .colorTheme(isDarkMode ? .dark : .light)
                     .preferredColorScheme(isDarkMode ? .dark : .light)
             } else {
-                MainTabView()
+                MainView()
                     .colorTheme(isDarkMode ? .dark : .light)
                     .preferredColorScheme(isDarkMode ? .dark : .light)
             }
