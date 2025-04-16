@@ -4,6 +4,10 @@ import SwiftData
 import PhotosUI
 import UniformTypeIdentifiers
 
+// Import potentially missing types (adjust if needed)
+// import Models // Assuming Models are in a module/namespace
+// import Services // Assuming Services are in a module/namespace
+
 @MainActor
 class ChatViewModel: ObservableObject {
     @Published var messages: [Message] = []
@@ -11,8 +15,19 @@ class ChatViewModel: ObservableObject {
     @Published var isLoading: Bool = false
     @Published var selectedProvider: Provider = .openAI
     @Published var selectedModel: String = "gpt-4"
+
+    // Track if model was manually selected
+    var modelManuallySelected: Bool = false
     @Published var selectedPhoto: PhotosPickerItem?
     @Published var selectedDocument: URL?
+
+    // Streaming support
+    @Published var isStreaming: Bool = false
+    @Published var streamedText: String = ""
+    @Published var streamingMessageId: UUID?
+
+    // Track the ID of the currently loaded chat session
+    @Published var chatSessionId: UUID? = nil
 
     private var openAIClient: OpenAIClient?
     private var anthropicClient: AnthropicClient?
@@ -116,6 +131,8 @@ class ChatViewModel: ObservableObject {
             return
         }
 
+        // Network connectivity will be checked during the API call
+
         // Check if we have a client for the selected provider
         guard let client = getCurrentClient() else {
             errorMessage = authError ?? "No API key found for \(selectedProvider.rawValue). Please add your API key in settings."
@@ -144,48 +161,112 @@ class ChatViewModel: ObservableObject {
         inputMessage = ""
         isLoading = true
 
+        // Create a placeholder message for streaming
+        let assistantMessage = Message(
+            id: UUID(),
+            content: "",  // Empty content initially
+            role: .assistant,
+            provider: selectedProvider,
+            model: selectedModel
+        )
+
+        // Set up streaming state
+        isStreaming = true
+        streamedText = ""
+        streamingMessageId = assistantMessage.id
+
+        // Add the message to the UI but don't persist it yet
+        messages.append(assistantMessage)
+
+        // Get conversation history (excluding the current assistant message)
+        let history = messages.filter { $0.id != assistantMessage.id }
+
         do {
-            // Use Task with timeout to prevent long-running operations
-            let response = try await Task.detached(priority: .userInitiated) {
-                return try await client.sendMessage(messageToSend, model: self.selectedModel)
-            }.value
+            // Debug logging for model selection
+            print("Using provider: \(selectedProvider.rawValue), model: \(selectedModel)")
 
-            let assistantMessage = Message(
-                content: response,
-                role: .assistant,
-                provider: selectedProvider,
-                model: selectedModel
-            )
+            // Use streaming API
+            let response = try await client.streamMessage(
+                messageToSend,
+                model: selectedModel,
+                history: history
+            ) { [weak self] updatedText in
+                // Update the streamed text on the main thread
+                Task { @MainActor [weak self] in
+                    guard let self = self else { return }
+                    self.streamedText = updatedText
+                }
+            }
 
-            // We've already checked that modelContext is not nil at the beginning of this method
-            // so we can safely use it here
+            // Update the assistant message with the final response
+            assistantMessage.content = response
+
+            // Now persist the message to the database
             modelContext.insert(assistantMessage)
-            messages.append(assistantMessage)
+
+            // Reset streaming state
+            isStreaming = false
+            streamingMessageId = nil
 
             // Provide success haptic feedback when message is received
             provideFeedback(type: .success)
         } catch AIError.apiError(let message) {
+            // Remove the placeholder message
+            if let index = messages.firstIndex(where: { $0.id == assistantMessage.id }) {
+                messages.remove(at: index)
+            }
+
             errorMessage = "API Error: \(message)"
             showError = true
             print("API Error: \(message)")
             provideFeedback(type: .error)
         } catch AIError.networkError(let error) {
+            // Remove the placeholder message
+            if let index = messages.firstIndex(where: { $0.id == assistantMessage.id }) {
+                messages.remove(at: index)
+            }
+
             errorMessage = "Network Error: Could not connect to the server. Please check your internet connection."
+
             showError = true
             print("Network Error: \(error)")
             provideFeedback(type: .error)
         } catch AIError.invalidResponse {
+            // Remove the placeholder message
+            if let index = messages.firstIndex(where: { $0.id == assistantMessage.id }) {
+                messages.remove(at: index)
+            }
+
             errorMessage = "Invalid Response: The server returned an unexpected response. Please try again."
             showError = true
             print("Invalid Response")
             provideFeedback(type: .error)
+        } catch AIError.streamingError(let message) {
+            // Remove the placeholder message
+            if let index = messages.firstIndex(where: { $0.id == assistantMessage.id }) {
+                messages.remove(at: index)
+            }
+
+            errorMessage = "Streaming Error: \(message)"
+            showError = true
+            print("Streaming Error: \(message)")
+            provideFeedback(type: .error)
         } catch {
+            // Remove the placeholder message
+            if let index = messages.firstIndex(where: { $0.id == assistantMessage.id }) {
+                messages.remove(at: index)
+            }
+
             errorMessage = "Error: \(error.localizedDescription)"
+
             showError = true
             print("Error: \(error.localizedDescription)")
             provideFeedback(type: .error)
         }
 
+        // Reset streaming state if there was an error
+        isStreaming = false
+        streamingMessageId = nil
         isLoading = false
     }
 
@@ -195,12 +276,35 @@ class ChatViewModel: ObservableObject {
     }
 
     private func getCurrentClient() -> AIClient? {
+        // Check if the model has a provider prefix (like "meta-llama/llama-4-scout:free")
+        if selectedModel.contains("/") {
+            // Models with provider prefixes should always use OpenRouter
+            print("Model contains provider prefix, using OpenRouter client")
+            if openRouterClient == nil {
+                print("WARNING: OpenRouter client is nil, API key may be missing")
+            }
+            return openRouterClient
+        }
+
+        // Otherwise use the selected provider
         switch selectedProvider {
         case .openAI:
+            print("Using OpenAI client for model: \(selectedModel)")
+            if openAIClient == nil {
+                print("WARNING: OpenAI client is nil, API key may be missing")
+            }
             return openAIClient
         case .anthropic:
+            print("Using Anthropic client for model: \(selectedModel)")
+            if anthropicClient == nil {
+                print("WARNING: Anthropic client is nil, API key may be missing")
+            }
             return anthropicClient
         case .openRouter:
+            print("Using OpenRouter client for model: \(selectedModel)")
+            if openRouterClient == nil {
+                print("WARNING: OpenRouter client is nil, API key may be missing")
+            }
             return openRouterClient
         }
     }
@@ -209,6 +313,7 @@ class ChatViewModel: ObservableObject {
         guard let modelContext = modelContext else {
             print("Model context not set")
             messages.removeAll()
+            chatSessionId = nil // Reset session ID when clearing
             return
         }
 
@@ -217,6 +322,7 @@ class ChatViewModel: ObservableObject {
             let existingMessages = try modelContext.fetch(descriptor)
             existingMessages.forEach { modelContext.delete($0) }
             messages.removeAll()
+            chatSessionId = nil // Reset session ID when clearing
         } catch {
             print("Error clearing messages: \(error)")
         }
@@ -229,17 +335,22 @@ class ChatViewModel: ObservableObject {
         }
 
         // Clear current messages
-        clearMessages()
+        clearMessages() // This will also reset chatSessionId
 
         // Reset provider and model to defaults if needed
-        selectedProvider = .openAI
-        selectedModel = "gpt-4"
+        if !modelManuallySelected {
+            selectedProvider = .openAI
+            selectedModel = "gpt-4"
+        }
 
         // Provide haptic feedback
         provideFeedback(type: .success)
     }
 
-    private func saveCurrentChatToHistory() {
+    func saveCurrentChatToHistory() {
+        // Only save if we have messages
+        guard !messages.isEmpty else { return }
+
         // Get the first few messages to create a title and preview
         let chatTitle = messages.first?.content.prefix(30).appending(messages.count > 1 ? "..." : "") ?? "New Chat"
         let lastMessage = messages.last?.content.prefix(50).appending("...") ?? ""
@@ -257,6 +368,8 @@ class ChatViewModel: ObservableObject {
             name: Notification.Name("SaveChatToHistory"),
             object: chatSession
         )
+
+        print("Saved chat to history: \(chatTitle)")
     }
 
     func handleSelectedPhoto() {
@@ -301,5 +414,32 @@ class ChatViewModel: ObservableObject {
 
         modelContext.insert(userMessage)
         messages.append(userMessage)
+    }
+
+    func loadChatSession(_ session: ChatSession) {
+        // Clear current state before loading
+        messages.removeAll()
+        inputMessage = ""
+        isLoading = false
+        isStreaming = false
+        streamedText = ""
+        streamingMessageId = nil
+        selectedPhoto = nil
+        selectedDocument = nil
+        errorMessage = nil
+        showError = false
+
+        // Load messages and ID from the session
+        self.chatSessionId = session.id
+        self.messages = session.messages
+
+        // Optionally restore provider/model if stored in ChatSession
+        // if let lastMessage = session.messages.last {
+        //     self.selectedProvider = lastMessage.provider
+        //     self.selectedModel = lastMessage.model
+        //     self.modelManuallySelected = true // Assume model was selected for this session
+        // }
+
+        print("Loaded chat session: \(session.title)")
     }
 }
