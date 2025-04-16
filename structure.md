@@ -17,20 +17,24 @@ The app follows a modern SwiftUI architecture with:
 ## Entry Points and Navigation
 
 - **Router_Chat_AIApp.swift**: Main app entry point that sets up the SwiftData container and determines whether to show onboarding or the main app
-- **MainTabView.swift**: Tab-based navigation with three main sections (History, Chat, Settings)
+- **MainView.swift**: Main view with custom top navigation bar and content switching
 
 ## Key Files and Their Functionality
 
 ### Models
 
-- **Provider.swift**: Enum defining the supported AI providers (OpenAI, Anthropic, OpenRouter) with their available models and keychain keys
+- **Provider.swift**: Enum defining the supported AI providers (OpenAI, Anthropic, OpenRouter) with their available models and keychain keys. Models with provider prefixes (e.g., "meta-llama/llama-4-scout:free") are automatically routed through OpenRouter.
 - **Message.swift**: SwiftData model for chat messages with properties for content, role, timestamp, provider, and model
 
 ### Views
 
 #### Main Navigation
-- **MainTabView.swift**: Tab-based navigation with History, Chat, and Settings tabs
-- **ContentView.swift**: Simple wrapper around MainTabView
+- **MainView.swift**: Main view with custom top navigation bar that includes:
+  - History button (clock icon)
+  - New chat button (plus icon)
+  - Current model name display
+  - Settings button (gear icon)
+- **ContentView.swift**: Simple wrapper around MainView
 
 #### Onboarding
 - **OnboardingView.swift**: Initial onboarding experience with information pages and API key setup
@@ -65,12 +69,15 @@ The app follows a modern SwiftUI architecture with:
 - **ChatViewModel.swift**: Manages chat state and interactions
   - Handles message sending/receiving
   - Manages provider/model selection
+  - Intelligently routes requests to the appropriate provider based on model format
+  - Remembers manually selected models between chat sessions
   - Handles attachments
   - Saves chats to history
 - **ChatHistoryViewModel.swift**: Manages chat history
   - Loads saved chats
   - Handles adding new chats
   - Manages chat deletion
+  - Shared instance used throughout the app
 - **SettingsViewModel.swift**: Manages settings
   - Loads/saves API keys
   - Provides bindings for settings UI
@@ -101,17 +108,19 @@ The app follows a modern SwiftUI architecture with:
 ## Navigation Flow
 
 1. **App Launch**:
-   - If first launch: OnboardingView → APIKeyFormView → MainTabView
-   - If returning user: MainTabView
+   - If first launch: OnboardingView → APIKeyFormView → MainView
+   - If returning user: MainView
 
-2. **MainTabView**:
-   - Tab 1: ChatHistoryView
-   - Tab 2: ChatView (new chat)
-   - Tab 3: SettingsView
+2. **MainView**:
+   - Top navigation bar with:
+     - History button: Switch to ChatHistoryView
+     - New chat button: Start a new chat in ChatView
+     - Model name: Open ModelSelectorView
+     - Settings button: Switch to SettingsView
 
 3. **ChatHistoryView**:
-   - Tapping a chat: ChatHistoryView → ChatView (with selected chat)
-   - Tapping "+" button: ChatHistoryView → ChatView (new chat)
+   - Tapping a chat: Switches to ChatView with the selected chat
+   - Swipe to delete chats
 
 4. **ChatView**:
    - Back button: ChatView → ChatHistoryView
@@ -134,7 +143,9 @@ The app follows a modern SwiftUI architecture with:
 
 3. **Chat History**:
    - Created when starting a new chat with existing messages
-   - Managed by ChatHistoryViewModel
+   - Automatically saved when clicking the + button to start a new chat
+   - Directly added to the shared ChatHistoryViewModel instance
+   - Managed by a single shared ChatHistoryViewModel instance
    - Displayed in ChatHistoryView
 
 ## Theme System
@@ -147,7 +158,7 @@ The app uses a custom theme system with:
 
 ## Key Features
 
-1. **Multi-provider support**: OpenAI, Anthropic, and OpenRouter
+1. **Multi-provider support**: OpenAI, Anthropic, and OpenRouter with intelligent routing based on model format
 2. **Secure API key storage**: Keys stored in Keychain
 3. **Chat history**: Save and revisit past conversations
 4. **Model selection**: Choose from various AI models
